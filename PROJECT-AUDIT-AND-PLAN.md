@@ -129,3 +129,9 @@ Acceptance: two players can resume a game, stale commands cannot alter it, and o
 ## Recommended next task
 
 Implement milestone 1 as an icons-and-clarity pass, starting with the resource bar and city progress. Pair it with save validation from milestone 2 before inviting anyone else to play. Keep balance changes in a subsequent slice so feedback can distinguish presentation improvements from new rules.
+
+## Implemented direction: head of state
+
+The active prototype now replaces city management with a 12-turn Belvar energy crisis in Executive and Political modes. Both share decisions, authored events, deterministic resolution, isolated government saves, full turn histories, and descriptive assessments. Political mode adds support and coordination requirements. Earlier city milestones above are historical, not the current product direction.
+
+Next playtest: replay both modes; compare unused slots, blocked requirements, final indicators, and whether coalition/coordination actions create choices or busywork. Defer combat, maps, elections, minister personalities, multiplayer and a final victory rule. Government decisions and scenario effects are content-defined in src/government/engine.ts.

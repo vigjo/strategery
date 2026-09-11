@@ -1,11 +1,13 @@
-# Strategery
+# Strategery — the head-of-state prototype
 
-A single-player, menu-only civilization sandbox. Install with `npm ci`, start with `npm run dev`, test with `npm test`, and build with `npm run build`.
+Install with `npm ci`; run `npm run dev`. Checks: `npm test`, `npm run build`, and `npm run test:browser` (first install Chromium with `npx playwright install chromium`).
 
-Choose a city focus, research Agriculture, unlock buildings, and pursue Astronomy. Food surplus grows the city; a deficit immediately costs one citizen. Production advances only the first queued building; science advances selected research. Unused yields and completion overflow are not banked. Changing research discards its progress, with confirmation. Gold accumulates but has no spending action yet.
+Lead fictional Belvar through a 12-turn energy crisis with supplier Veyra. Executive mode executes eligible policy reliably. Political mode uses the same policy effects, with legislative support and cabinet coordination. Draft up to two distinct decisions, reorder or remove them, then submit. Invalid drafts never partially execute. Event responses are optional, limited to one per event, consume a slot, and carry no extra coordination or legislative requirement.
 
-The header shows rates, food consumption and gold treasury. Project estimates assume current output; later changes to population and buildings can change them. Queue estimates include preceding projects.
+Resolution: validate ordered immediate decisions, execute them, collect 10 revenue/pay 6 baseline expenditure, advance pre-existing commitments, deduct 4 energy, apply shortage/debt approval penalties, apply political support changes, log the turn, and restore coordination for the next turn. The first turn starts at full coordination. Newly created commitments do not charge or advance that turn. Negotiations resolve on the following turn; successful agreements deliver immediately then, followed by two further deliveries. Requirements for legislative approval apply when authorizing negotiations, not again when the supplier responds.
 
-Saves stay in this browser. Export a JSON backup to keep a run elsewhere. Imports validate before replacing a game. Unreadable saves block gameplay/autosave until you import a valid save or explicitly start over; export the original first for recovery. Legacy snapshots migrate on the next save. Last-turn reports are transient and cleared when loading.
+A turn-12 assessment describes welfare, finances, energy and diplomacy without declaring an overall winner. Replay the other mode preserves the prior assessment. Both runs are saved and exported. Drafts are session-local; submitted turns, unused slots and blocked attempts are persisted locally. No remote analytics.
 
-`src/engine` contains pure rules and content. `src/ui` owns React, local SVG icons and display styling. `src/persist.ts` validates and stores snapshots. No backend is required.
+Government saves use `strategery.government.v1`; legacy civilization data is untouched. Version 1 saves are verified by deterministic replay of their full history. Invalid saves block play/autosave until an explicit reset or valid import. Export the original first for recovery. Future rule changes require version migration.
+
+The active rules and persistence live in `src/government`. The old `src/engine` remains only as an archived prototype and for existing icon types; it is not used for government gameplay. The React shell lives in `src/ui`.
