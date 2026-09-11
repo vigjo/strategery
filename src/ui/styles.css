@@ -218,3 +218,32 @@ button.active {
   color: #6b7385;
   font-size: 0.9rem;
 }
+.game-icon {width:20px;height:20px;vertical-align:middle;flex-shrink:0}
+button {display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px}
+button:focus-visible,input:focus-visible {outline:2px solid #a8c9f2;outline-offset:3px}
+.app {max-width:1120px;gap:20px;padding-top:28px}
+.top-bar {justify-content:space-between;padding:20px}
+.top-bar h1 {font-size:24px;margin-top:4px}
+small {color:#afb8c8}
+.resource-grid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.resource {display:flex;gap:12px;padding:18px;background:#1a1d27;border:1px solid #343b49;border-radius:8px}
+.resource strong {display:block;font-size:22px;margin:6px 0}
+.resource small {display:block;font-size:12px;line-height:1.5}
+.food .game-icon,.icon-food {color:#b6ce85}
+.production .game-icon,.icon-production {color:#ddb28b}
+.science .game-icon,.icon-science {color:#9dbfec}
+.gold .game-icon,.icon-gold {color:#e2ca7e}
+.notice {border-left:3px solid #a6b9d0;background:#1b2430;padding:12px 16px;font-size:14px}
+.notice p {margin:6px 0}
+.game-panels {border:0;padding:0;margin:0;min-width:0}
+.progress-meter {width:100%;margin:12px 0 18px;font-size:13px}
+.progress-meter strong {float:right}
+progress {display:block;width:100%;height:8px;accent-color:#a2bfa0;margin:8px 0}
+.panel {padding:20px}
+.panel h2:not(:first-child) {margin-top:24px}
+.list li {padding:12px}
+.muted {color:#a7b0bf}
+.import-label {display:flex;align-items:center;gap:8px;font-size:14px;flex-wrap:wrap}
+.import-label input {max-width:220px}
+@media(max-width:850px){.resource-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){.resource-grid{grid-template-columns:1fr}.app{padding:12px}.panel{padding:14px}}
