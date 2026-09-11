@@ -1,0 +1,33 @@
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { createInitialState, reduce, preview, POLICIES, EVENTS, type State, type PolicyId } from './engine';
+import { encode, decode, load, save, KEY } from './persist';
+const turn = (s: State, decisions: PolicyId[] = []) => reduce(s, { type: 'submitTurn', decisions }).state;
+it('shares immediate effects across modes', () => { for (const id of ['relief', 'program', 'purchase', 'agreement', 'outreach', 'address'] as PolicyId[]) {
+    const e = createInitialState('executive'), p = createInitialState('political');
+    p.support = 60;
+    expect(preview(e, [id]).state.indicators).toEqual(preview(p, [id]).state.indicators);
+} });
+it('validates the whole ordered draft atomically', () => { const s = createInitialState('political'); expect(preview(s, ['coalition', 'program']).errors).toEqual([]); expect(turn(s, ['program', 'coalition'])).toBe(s); expect(turn(s, ['coalition', 'program']).support).toBe(60); });
+it('checks combined costs, coordination and support boundaries', () => { const s = createInitialState('political'); s.support = 59; expect(preview(s, ['relief']).errors.length).toBe(1); s.support = 60; s.indicators.treasury = 15; expect(preview(s, ['purchase', 'relief']).errors.length).toBe(1); s.coordination = 0; expect(preview(s, ['outreach']).errors.length).toBe(1); expect(preview(s, ['coordinate', 'outreach']).errors).toEqual([]); });
+it('restores coordination and respects cooldowns and duplicate actions', () => { const s = turn(createInitialState('political'), ['purchase', 'outreach']); expect(s.coordination).toBe(2); expect(preview(s, ['address', 'address']).errors.length).toBe(1); expect(preview(turn(s, ['address']), ['address']).errors.length).toBe(1); });
+it('defers program charges and completes on its third payment', () => { let s = turn(createInitialState('executive'), ['program']); expect(s.indicators.treasury).toBe(52); expect(s.program?.remaining).toBe(3); expect(preview(s, ['program']).errors.length).toBe(1); s = turn(turn(turn(s))); expect(s.program).toBeNull(); expect(s.indicators.treasury).toBe(55); expect(s.indicators.energy).toBe(49); });
+it('resolves agreements next turn and makes exactly three deliveries', () => { let s = turn(createInitialState('executive'), ['agreement']); expect(s.agreement?.pending).toBe(true); expect(s.indicators.energy).toBe(46); s = turn(s); expect(s.indicators.relations).toBe(58); expect(s.agreement?.remaining).toBe(2); s = turn(turn(s)); expect(s.agreement).toBeNull(); expect(s.indicators.energy).toBe(49); });
+it('declines an agreement below threshold without charging a delivery', () => { const s = createInitialState('executive'); s.indicators.relations = 44; const result = turn(turn(s, ['agreement'])); expect(result.agreement).toBeNull(); expect(result.indicators.treasury).toBe(68); });
+it('allows mandatory debt and bounds indicators', () => { let s = createInitialState('executive'); s.indicators.treasury = 12; s = turn(s, ['program']); s.indicators.treasury = -10; const next = turn(s); expect(next.indicators.treasury).toBe(-9); expect(next.indicators.approval).toBe(52); s.indicators.approval = 99; expect(turn(s, ['address']).indicators.approval).toBe(97); s.indicators.energy = 0; expect(turn(s).indicators.energy).toBe(0); });
+describe('authored responses', () => { for (const [at, event] of Object.entries(EVENTS))
+    for (const id of event.choices)
+        it(`${at}: ${id}`, () => { const s = createInitialState('executive'); s.turn = Number(at); const result = preview(s, [id]); expect(result.errors).toEqual([]); const p = POLICIES[id] as {
+            cost: number;
+            effect?: Record<string, number>;
+        }; expect(result.state.indicators.treasury).toBe(60 - p.cost); for (const [key, value] of Object.entries(p.effect ?? {}))
+            expect(result.state.indicators[key as keyof State['indicators']]).toBe(s.indicators[key as keyof State['indicators']] + value); expect(preview(s, event.choices).errors.length).toBeGreaterThan(0); }); });
+for (const mode of ['executive', 'political'] as const)
+    it(`terminates ${mode} after exactly 12 deterministic turns`, () => { let s = createInitialState(mode); for (let i = 0; i < 12; i++)
+        s = turn(s, i % 2 === 0 ? ['address'] : []); expect(s.turn).toBe(13); expect(s.history).toHaveLength(12); expect(turn(s)).toBe(s); expect(decode(encode({ current: s, previous: null })).current).toEqual(s); });
+afterEach(() => vi.unstubAllGlobals());
+it('round-trips pending commitments and preserves mode', () => { const s = turn(createInitialState('executive'), ['program', 'agreement']); expect(decode(encode({ current: s, previous: null })).current).toEqual(s); });
+it('rejects malformed or tampered saves and preserves original data', () => { expect(() => decode('{}')).toThrow(); const s = turn(createInitialState('political')); s.indicators.treasury = 999; expect(() => decode(encode({ current: s, previous: null }))).toThrow(); const setItem = vi.fn(); vi.stubGlobal('localStorage', { getItem: () => '{', setItem }); expect(load().error).toBeTruthy(); expect(setItem).not.toHaveBeenCalled(); });
+it('isolates old civilization saves and handles storage failure', () => { const getItem = vi.fn(() => null), setItem = vi.fn(); vi.stubGlobal('localStorage', { getItem, setItem }); load(); save({ current: null, previous: null }); expect(getItem).toHaveBeenCalledWith(KEY); expect(setItem.mock.calls[0][0]).toBe(KEY); vi.stubGlobal('localStorage', { getItem: () => { throw Error(); }, setItem: () => { throw Error(); } }); expect(load().error).toBeTruthy(); expect(save({ current: null, previous: null })).toBeTruthy(); });
+it('records unused slots and blocked reasons locally', () => { const s = reduce(createInitialState('political'), { type: 'submitTurn', decisions: [], blocked: ['Requires 60 legislative support.'] }).state; expect(s.history[0].unused).toBe(2); expect(s.history[0].blocked).toEqual(['Requires 60 legislative support.']); });
+it('enforces event timing, unknown IDs and action count without mutation', () => { const s = createInitialState('executive'); expect(preview(s, ['ration']).errors.length).toBe(1); expect(preview(s, ['purchase', 'outreach', 'address']).errors.length).toBe(1); const event = { ...s, turn: 3 }; expect(preview(event, ['unknown' as PolicyId, 'ration']).errors.length).toBeGreaterThan(0); });
+it('applies support changes and indicator caps', () => { let s = createInitialState('political'); s.indicators.approval = 70; s.support = 99; expect(turn(s).support).toBe(100); s.indicators.approval = 30; s.support = 2; expect(turn(s).support).toBe(0); s.indicators.relations = 99; expect(preview(s, ['outreach']).state.indicators.relations).toBe(100); });
