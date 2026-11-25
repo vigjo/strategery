@@ -11,3 +11,9 @@ A turn-12 assessment describes welfare, finances, energy and diplomacy without d
 Government saves use `strategery.government.v1`; legacy civilization data is untouched. Version 1 saves are verified by deterministic replay of their full history. Invalid saves block play/autosave until an explicit reset or valid import. Export the original first for recovery. Future rule changes require version migration.
 
 The active rules and persistence live in `src/government`. The old `src/engine` remains only as an archived prototype and for existing icon types; it is not used for government gameplay. The React shell lives in `src/ui`.
+
+## Situation-room interface
+
+Navigate between Briefing, Cabinet, Foreign Affairs, and History without losing your draft. The desktop decision tray stays available; on mobile, use Review draft to open it. Indicator trends describe the last resolved turn, while the tray shows immediate effects of draft decisions separately from recurring obligations. The Game menu contains export/import and mode selection. Escape closes dialogs and restores focus.
+
+The original local SVG terminal illustration appears only in the turn-3 supply briefing. UI metadata, icons, views, and display selectors are isolated from the unchanged government rules and version-1 saves. Browser checks cover 1440px, 1024px, and 390px widths.
