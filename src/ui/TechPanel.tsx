@@ -1,3 +1,5 @@
+import { GameIcon, ProgressMeter } from './GameIcon'
+import { computeYields, canChooseResearch } from '../engine'
 import { TECH_ORDER, TECHS, type GameState, type TechId } from '../engine'
 
 interface Props {
@@ -11,7 +13,7 @@ export function TechPanel({ state, onChooseResearch }: Props) {
 
   return (
     <section className="panel">
-      <h2>Research</h2>
+      <h2><GameIcon name="science"/> Research</h2>{current && <ProgressMeter label={TECHS[current].name} value={progress} max={TECHS[current].cost} rate={computeYields(state).science}/>} {current && progress > 0 && <p className="notice">Switching technology discards {progress} science progress.</p>}
       {current ? (
         <div className="meta">
           <span>
@@ -32,16 +34,16 @@ export function TechPanel({ state, onChooseResearch }: Props) {
           const unlocked = def.requires.every((req) => researched.has(req))
           const locked = !done && !unlocked
           const isCurrent = current === id
-          const canChoose = !done && unlocked
+          const canChoose = canChooseResearch(state,id)
 
           return (
             <li key={id}>
-              <span className="name">{def.name}</span>
-              {done && <span className="badge done">Done</span>}
+              <span className="name"><GameIcon name={id}/> {def.name}</span>
+              {done && <span className="badge done"><GameIcon name="check"/> Done</span>}
               {isCurrent && <span className="badge active">Researching</span>}
               {locked && (
                 <span className="badge locked">
-                  Needs {def.requires.join(', ')}
+                  <GameIcon name="lock"/> Needs {def.requires.filter(req=>!researched.has(req)).map(req=>TECHS[req].name).join(', ')}
                 </span>
               )}
               {!done && !locked && !isCurrent && (
@@ -53,7 +55,7 @@ export function TechPanel({ state, onChooseResearch }: Props) {
                 <button
                   type="button"
                   className={isCurrent ? 'active' : undefined}
-                  onClick={() => onChooseResearch(id)}
+                  disabled={isCurrent} aria-label={'Research ' + def.name} onClick={() => {if(!current || !progress || window.confirm('Switch research and discard current progress?')) onChooseResearch(id)}}
                 >
                   {isCurrent ? 'Selected' : 'Research'}
                 </button>
@@ -65,3 +67,5 @@ export function TechPanel({ state, onChooseResearch }: Props) {
     </section>
   )
 }
+
+

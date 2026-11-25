@@ -1,3 +1,5 @@
+import { GameIcon, ProgressMeter } from './GameIcon'
+import { computeYields, canQueueBuilding, TECHS } from '../engine'
 import {
   BUILDING_ORDER,
   BUILDINGS,
@@ -17,13 +19,15 @@ interface Props {
 
 export function CityPanel({ state, growthNeed, onSetFocus, onQueueBuilding }: Props) {
   const { city } = state
+  const output = computeYields(state)
+  let queueTurns = 0
   const researched = new Set(state.research.researched)
   const queued = new Set(city.buildQueue.map((q) => q.buildingId))
   const built = new Set(city.buildings)
 
   return (
     <section className="panel">
-      <h2>City — {city.name}</h2>
+      <h2><GameIcon name="population"/> City — {city.name}</h2>
       <div className="meta">
         <span>
           Population <strong>{city.population}</strong>
@@ -36,15 +40,15 @@ export function CityPanel({ state, growthNeed, onSetFocus, onQueueBuilding }: Pr
         </span>
       </div>
 
-      <div className="row">
+      <ProgressMeter label="Population growth" value={city.foodBin} max={growthNeed} rate={output.food-city.population}/><div className="row">
         {FOCUSES.map((focus) => (
           <button
             key={focus}
             type="button"
-            className={city.focus === focus ? 'active' : undefined}
+            aria-pressed={city.focus === focus} className={city.focus === focus ? 'active' : undefined}
             onClick={() => onSetFocus(focus)}
           >
-            Focus {focus}
+            <GameIcon name={focus}/> Focus {focus}
           </button>
         ))}
       </div>
@@ -56,12 +60,13 @@ export function CityPanel({ state, growthNeed, onSetFocus, onQueueBuilding }: Pr
         <ul className="list">
           {city.buildQueue.map((item) => {
             const def = BUILDINGS[item.buildingId]
+            queueTurns += Math.ceil((def.cost-item.progress)/output.production)
             return (
               <li key={item.buildingId}>
-                <span className="name">{def.name}</span>
+                <span className="name"><GameIcon name={def.id}/> {def.name}</span>
                 <span className="badge">
-                  {item.progress} / {def.cost}
-                </span>
+                  {item.progress} / {def.cost} · ready in ~{queueTurns} turns at current output
+                </span><ProgressMeter label={def.name} value={item.progress} max={def.cost} rate={output.production} turns={queueTurns}/>
               </li>
             )
           })}
@@ -75,20 +80,20 @@ export function CityPanel({ state, growthNeed, onSetFocus, onQueueBuilding }: Pr
           const isBuilt = built.has(id)
           const isQueued = queued.has(id)
           const locked = def.requiresTech !== null && !researched.has(def.requiresTech)
-          const canQueue = !isBuilt && !isQueued && !locked
+          const canQueue = canQueueBuilding(state,id)
 
           return (
             <li key={id}>
-              <span className="name">{def.name}</span>
-              {isBuilt && <span className="badge done">Built</span>}
+              <span className="name"><GameIcon name={def.id}/> {def.name}</span>
+              {isBuilt && <span className="badge done"><GameIcon name="check"/> Built</span>}
               {isQueued && <span className="badge active">Queued</span>}
-              {locked && <span className="badge locked">Needs {def.requiresTech}</span>}
+              {locked && <span className="badge locked"><GameIcon name="lock"/> Needs {def.requiresTech ? TECHS[def.requiresTech].name : ""}</span>}
               {!isBuilt && !isQueued && !locked && (
                 <span className="badge">Cost {def.cost}</span>
               )}
               <span className="desc">{def.description}</span>
               {canQueue && (
-                <button type="button" onClick={() => onQueueBuilding(id)}>
+                <button type="button" aria-label={`Queue ${def.name}`} onClick={() => onQueueBuilding(id)}>
                   Queue
                 </button>
               )}
@@ -99,3 +104,6 @@ export function CityPanel({ state, growthNeed, onSetFocus, onQueueBuilding }: Pr
     </section>
   )
 }
+
+
+

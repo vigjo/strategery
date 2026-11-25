@@ -162,3 +162,27 @@ describe('research', () => {
     expect(s.lastEvents.some((e) => e.type === 'victory')).toBe(true)
   })
 })
+
+it('rejects a duplicate queued building without mutating the input',()=>{
+ const initial=createInitialState();initial.research.researched=['agriculture','pottery']
+ const queued=reduce(initial,{type:'queueBuilding',buildingId:'granary'}).state
+ const before=JSON.stringify(queued)
+ expect(reduce(queued,{type:'queueBuilding',buildingId:'granary'}).state.city.buildQueue).toHaveLength(1)
+ expect(JSON.stringify(queued)).toBe(before)
+ expect(initial.city.buildQueue).toEqual([])
+})
+it('exposes starvation despite historical food totals',()=>{
+ let state=createInitialState()
+ for(let i=0;i<10;i++) state=reduce(state,{type:'endTurn'}).state
+ expect(state.city.population).toBe(3)
+ state=reduce(state,{type:'setFocus',focus:'science'}).state
+ expect(reduce(state,{type:'endTurn'}).state.city.population).toBe(2)
+})
+it('completes Agriculture on precisely the seventh science-focused turn',()=>{
+ let state=reduce(createInitialState(),{type:'chooseResearch',techId:'agriculture'}).state
+ state=reduce(state,{type:'setFocus',focus:'science'}).state
+ for(let i=0;i<6;i++)state=reduce(state,{type:'endTurn'}).state
+ expect(state.research.progress).toBe(18)
+ expect(state.research.researched).toEqual([])
+ expect(reduce(state,{type:'endTurn'}).state.research.researched).toContain('agriculture')
+})
