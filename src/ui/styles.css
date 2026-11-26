@@ -754,17 +754,12 @@ details p {
 
 
 
-.all-games {
-  display: inline-flex;
-  align-self: center;
-  align-items: center;
-  gap: .35rem;
-  padding: .2rem .65rem;
-  border: 1px solid currentColor;
-  border-radius: 1rem;
-  color: inherit;
-  font: 600 .875rem/1.5 system-ui, sans-serif;
-  text-decoration: none;
+.library-bar {
+  padding: .7rem clamp(1rem, 5vw, 4rem);
+  border-bottom: 1px solid #ffffff24;
+  background: #0003;
+  color: #e5eceb;
+  font: 500 .9rem/1.5 system-ui, sans-serif;
 }
-.all-games:hover { text-decoration: underline; }
-.all-games:focus-visible { outline: 3px solid #ed8b00; outline-offset: 2px; }
+.library-bar a { color: inherit; text-underline-offset: .2em; }
+.library-bar a:focus-visible { outline: 3px solid #ffc969; outline-offset: 3px; }
